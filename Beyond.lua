@@ -4623,40 +4623,46 @@ function Library:CreateWindow(options)
 
         -- ---------------- SERVER LIVE STATS ----------------
         local Srv = NewCard(10, 236, 250, 134)
-        Cap(Srv, "SERVER LIVE", 14, 10, 150)
-        local fpsLbl, pingLbl
-        local function Stat(label, x)
-            Create("TextLabel", { Parent = Srv, Text = label, Font = Enum.Font.GothamBold, TextSize = 9, TextColor3 = H_DIM, BackgroundTransparency = 1,
-                Size = UDim2.new(0, 100, 0, 12), Position = UDim2.new(0, x, 0, 30), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3 })
-            return Create("TextLabel", { Parent = Srv, Text = "--", Font = Enum.Font.GothamBlack, TextSize = 24, TextColor3 = TextColor, BackgroundTransparency = 1,
-                Size = UDim2.new(0, 100, 0, 30), Position = UDim2.new(0, x, 0, 44), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3 })
+Cap(Srv, "SERVER LIVE", 14, 10, 150)
+local fpsLbl, pingLbl
+local function Stat(label, x)
+    Create("TextLabel", { Parent = Srv, Text = label, Font = Enum.Font.GothamBold, TextSize = 9, TextColor3 = H_DIM, BackgroundTransparency = 1,
+        Size = UDim2.new(0, 100, 0, 12), Position = UDim2.new(0, x, 0, 30), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3 })
+    return Create("TextLabel", { Parent = Srv, Text = "--", Font = Enum.Font.GothamBlack, TextSize = 24, TextColor3 = TextColor, BackgroundTransparency = 1,
+        Size = UDim2.new(0, 100, 0, 30), Position = UDim2.new(0, x, 0, 44), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3 })
+end
+fpsLbl = Stat("FPS", 14)
+pingLbl = Stat("PING (ms)", 130)
+local jobId = tostring(game.JobId or "")
+Create("TextLabel", { Parent = Srv, Text = "SERVER ID  " .. (jobId ~= "" and jobId:sub(1, 13) or "studio"), Font = Enum.Font.Code, TextSize = 10, TextColor3 = H_DIM,
+    BackgroundTransparency = 1, Size = UDim2.new(1, -28, 0, 14), Position = UDim2.new(0, 14, 0, 84), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3 })
+local barBack = Create("Frame", { Parent = Srv, BackgroundColor3 = Color3.fromRGB(34, 34, 48), BorderSizePixel = 0, Size = UDim2.new(1, -28, 0, 6),
+    Position = UDim2.new(0, 14, 0, 108), ZIndex = 3 })
+Create("UICorner", { Parent = barBack, CornerRadius = UDim.new(1, 0) })
+local barFill = Create("Frame", { Parent = barBack, BackgroundColor3 = AccentColor, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0), ZIndex = 4 })
+Create("UICorner", { Parent = barFill, CornerRadius = UDim.new(1, 0) })
+Create("TextLabel", { Parent = Srv, Text = "SERVER FILL", Font = Enum.Font.GothamBold, TextSize = 8, TextColor3 = H_DIM, BackgroundTransparency = 1,
+    Size = UDim2.new(0, 100, 0, 10), Position = UDim2.new(0, 14, 0, 97), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3 })
+local frames = 0
+local hb = RunService.Heartbeat:Connect(function() frames = frames + 1 end)
+task.spawn(function()
+    while ScreenGui and ScreenGui.Parent do
+        task.wait(0.5)
+        local f = frames; frames = 0
+        if Home.Visible then
+            fpsLbl.Text = tostring(math.floor(f * 2 + 0.5))
+            local okp, p = pcall(function() return Stats.Network.ServerStatsItem["Data Ping"]:GetValue() end)
+            pingLbl.Text = okp and tostring(math.floor(p + 0.5)) or "--"
+            Tween(barFill, { Size = UDim2.new(math.clamp(#Players:GetPlayers() / math.max(Players.MaxPlayers, 1), 0.04, 1), 0, 1, 0) }, TI.Normal)
         end
-        fpsLbl = Stat("FPS", 14)
-        pingLbl = Stat("PING (ms)", 130)
-        local jobId = tostring(game.JobId or "")
-        Create("TextLabel", { Parent = Srv, Text = "SERVER ID  " .. (jobId ~= "" and jobId:sub(1, 13) or "studio"), Font = Enum.Font.Code, TextSize = 10, TextColor3 = H_DIM,
-            BackgroundTransparency = 1, Size = UDim2.new(1, -28, 0, 14), Position = UDim2.new(0, 14, 0, 84), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3 })
-        local barBack = Create("Frame", { Parent = Srv, BackgroundColor3 = Color3.fromRGB(34, 34, 48), BorderSizePixel = 0, Size = UDim2.new(1, -28, 0, 6),
-            Position = UDim2.new(0, 14, 0, 108), ZIndex = 3 })
-        Create("UICorner", { Parent = barBack, CornerRadius = UDim.new(1, 0) })
-        local barFill = Create("Frame", { Parent = barBack, BackgroundColor3 = AccentColor, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0), ZIndex = 4 })
-        Create("UICorner", { Parent = barFill, CornerRadius = UDim.new(1, 0) })
-        Create("TextLabel", { Parent = Srv, Text = "SERVER FILL", Font = Enum.Font.GothamBold, TextSize = 8, TextColor3 = H_DIM, BackgroundTransparency = 1,
-            Size = UDim2.new(0, 100, 0, 10), Position = UDim2.new(0, 14, 0, 97), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3 })
-        local frames = 0
-        local hb = RunService.Heartbeat:Connect(function() frames = frames + 1 end)
-        task.spawn(function()
-            while ScreenGui and ScreenGui.Parent do
-                task.wait(0.5)
-                local f = frames; frames = 0
-                if Home.Visible then
-                    fpsLbl.Text = tostring(math.floor(f * 2 + 0.5))
-                    local okp, p = pcall(function() return Stats.Network.ServerStatsItem["Data Ping"]:GetValue() end)
-                    pingLbl.Text = okp and tostring(math.floor(p + 0.5)) or "--"
-                    Tween(barFill, { Size = UDim2.new(math.clamp(#Players:GetPlayers() / math.max(Players.MaxPlayers, 1), 0.04, 1), 0, 1, 0) }, TI.Normal)
-                end
-            end
-        end)
+    end
+end)
+
+if FooterGroup then
+    local oldFooter = FooterGroup:FindFirstChild("ZyronXFooterLabel")
+        or FooterGroup:FindFirstChildOfClass("TextLabel")
+    if oldFooter then oldFooter:Destroy() end
+end
 
         -- ---------------- MOVEMENT (vertical sliders) ----------------
         local Mov = NewCard(268, 124, 207, 246)
