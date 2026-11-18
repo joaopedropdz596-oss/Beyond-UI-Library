@@ -4534,7 +4534,6 @@ function Library:CreateWindow(options)
         local lp = Players.LocalPlayer
         local Stats = game:GetService("Stats")
         local H_BG, H_EDGE, H_DIM = Color3.fromRGB(19, 19, 28), Color3.fromRGB(52, 52, 76), Color3.fromRGB(120, 122, 142)
-        local OWNER_YT = (type(options) == "table" and options.OwnerYT) or Library.OwnerYT or "https://www.youtube.com/@hypol-x"
         local Home = Create("ScrollingFrame", { Name = "HomeTab", Parent = ContentArea, BackgroundTransparency = 1, BorderSizePixel = 0, Size = UDim2.new(1, 0, 1, 0),
             CanvasSize = UDim2.new(0, 0, 0, 380), ScrollBarThickness = 0, ScrollingDirection = Enum.ScrollingDirection.Y,
             AutomaticCanvasSize = Enum.AutomaticSize.None, Active = true, Visible = true })
@@ -4839,62 +4838,6 @@ function Library:CreateWindow(options)
             end
             pa:Disconnect(); pr:Disconnect(); hb:Disconnect()
         end)
-
-        -- ---------------- CREDITS (simple: Window:AddCredit("Title", "text to copy")) ----------------
-        local CR_Y, CR_ROW = 378, 40
-        local CreditsCard = NewCard(10, CR_Y, 465, 40)
-        CreditsCard.Visible = false
-        Cap(CreditsCard, "CREDITS", 14, 10, 200)
-        local creditRows = {}
-        local function RelayoutCredits()
-            local n = #creditRows
-            CreditsCard.Size = UDim2.new(0, 465, 0, 32 + n * CR_ROW + 4)
-            CreditsCard.Visible = n > 0
-            Home.CanvasSize = UDim2.new(0, 0, 0, n > 0 and (CR_Y + 36 + n * CR_ROW + 14) or 380)
-            if n > 0 and Home.Visible and CreditsCard.GroupTransparency > 0.5 and cards[1] and cards[1].GroupTransparency < 0.5 then
-                Tween(CreditsCard, { GroupTransparency = 0 }, TI.Normal)
-            end
-        end
-        RS.AddCredit = function(a, b)
-            local title, copy
-            if type(a) == "table" then title = a.Title or a.Name or a[1]; copy = a.Copy or a.Text or a.Link or a[2]
-            else title, copy = a, b end
-            title = tostring(title or "Credit"); copy = tostring(copy or title)
-            local i = #creditRows + 1
-            local row = Create("Frame", { Parent = CreditsCard, BackgroundColor3 = Color3.fromRGB(26, 26, 38), BorderSizePixel = 0,
-                Size = UDim2.new(1, -28, 0, 34), Position = UDim2.new(0, 14, 0, 30 + (i - 1) * CR_ROW), ZIndex = 3 })
-            Create("UICorner", { Parent = row, CornerRadius = UDim.new(0, 8) })
-            Create("TextLabel", { Parent = row, Text = title, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = TextColor, BackgroundTransparency = 1,
-                Size = UDim2.new(1, -96, 0, 15), Position = UDim2.new(0, 12, 0, 3), TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
-            Create("TextLabel", { Parent = row, Text = copy, Font = Enum.Font.Gotham, TextSize = 9, TextColor3 = H_DIM, BackgroundTransparency = 1,
-                Size = UDim2.new(1, -96, 0, 12), Position = UDim2.new(0, 12, 0, 18), TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
-            local btn = Create("TextButton", { Parent = row, Text = "COPY", Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = Color3.new(1, 1, 1),
-                BackgroundColor3 = Color3.fromRGB(122, 84, 214), AutoButtonColor = false, Size = UDim2.new(0, 68, 0, 22), AnchorPoint = Vector2.new(1, 0.5),
-                Position = UDim2.new(1, -8, 0.5, 0), BorderSizePixel = 0, ZIndex = 5 })
-            Create("UICorner", { Parent = btn, CornerRadius = UDim.new(0, 7) })
-            AddBounce(btn, 0.94)
-            btn.MouseButton1Click:Connect(function()
-                PlayUISound(UI_SOUND_IDS.Control)
-                local ok = CopyToClipboard(copy)
-                btn.Text = ok and "COPIED!" or "FAILED"
-                Tween(btn, { BackgroundColor3 = ok and Color3.fromRGB(60, 170, 110) or Color3.fromRGB(190, 60, 76) }, TI.Fast)
-                task.delay(1.3, function()
-                    if btn.Parent then
-                        btn.Text = "COPY"
-                        Tween(btn, { BackgroundColor3 = LiveTheme.Map(Color3.fromRGB(122, 84, 214)) }, TI.Normal)
-                    end
-                end)
-            end)
-            creditRows[i] = row
-            RelayoutCredits()
-            return row
-        end
-        if type(options) == "table" and type(options.Credits) == "table" then
-            for _, c in ipairs(options.Credits) do RS.AddCredit(c) end
-        end
-        if type(Library.Credits) == "table" then
-            for _, c in ipairs(Library.Credits) do RS.AddCredit(c) end
-        end
 
         -- ---------------- show / hide with a staggered cinematic entrance ----------------
         local showToken = 0
