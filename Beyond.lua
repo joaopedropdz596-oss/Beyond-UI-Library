@@ -1,5 +1,5 @@
-﻿-- // Beyond UI Library (Core Engine) - Zero Lag Optimized
--- // made by silvaxhh
+-- // ZyronX UI Library (Core Engine) - Zero Lag Optimized
+-- // made by hypol-x
 
 local TweenService        = game:GetService("TweenService")
 local UserInputService    = game:GetService("UserInputService")
@@ -24,7 +24,7 @@ local function IsReducedMotion()
 end
 
 local Library = { WhitelistedUsers = {} }
-Library.__zx_ip = { author = "silvaxhh", work = "Beyond UI Library (Core Engine)", note = "original protected work; patent/IP rights reserved by silvaxhh; do not strip" }
+Library.__zx_ip = { author = "hypol-X", work = "ZyronX UI Library (Core Engine)", note = "original protected work; patent/IP rights reserved by hypol-X; do not strip" }
 local ActiveControlDragOwner = nil
 local ActiveBlurUsers = 0
 local SharedUIBlur = nil
@@ -89,7 +89,7 @@ local function PlayUISound(soundId, volume)
     if not UISoundsEnabled then return end
     if type(soundId) ~= "string" or soundId == "" then return end
     local playedSound = Instance.new("Sound")
-    playedSound.Name = "Beyond_UIInteractionSound"
+    playedSound.Name = "ZyronX_UIInteractionSound"
     playedSound.SoundId = soundId
     playedSound.Volume = (volume or 0.55) * UISoundVolume
     playedSound.Parent = SoundService
@@ -109,7 +109,7 @@ local ExplosionFX = { Id = "rbxassetid://7967624549", Sound = nil }
 function ExplosionFX.Prep()
     if ExplosionFX.Sound and ExplosionFX.Sound.Parent then return end
     local sn = Instance.new("Sound")
-    sn.Name = "Beyond_ExplosionSnd"; sn.SoundId = ExplosionFX.Id
+    sn.Name = "ZyronX_ExplosionSnd"; sn.SoundId = ExplosionFX.Id
     sn.Volume = 3; sn.Parent = SoundService
     ExplosionFX.Sound = sn
     task.spawn(function() pcall(function() ContentProvider:PreloadAsync({ sn }) end) end)
@@ -127,10 +127,10 @@ end
 
 -- Intro sting: created + preloaded at load time so it fires with zero delay when the UI pops in.
 local IntroSnd = Instance.new("Sound")
-IntroSnd.Name = "Beyond_IntroSting"; IntroSnd.SoundId = "rbxassetid://118581208531149"; IntroSnd.Volume = 0.9; IntroSnd.Parent = SoundService
+IntroSnd.Name = "ZyronX_IntroSting"; IntroSnd.SoundId = "rbxassetid://118581208531149"; IntroSnd.Volume = 0.9; IntroSnd.Parent = SoundService
 task.spawn(function() pcall(function() ContentProvider:PreloadAsync({ IntroSnd }) end) end)
 Library.__bhSnd = Instance.new("Sound")
-Library.__bhSnd.Name = "Beyond_BlackHoleSnd"; Library.__bhSnd.SoundId = "rbxassetid://95621551459585"
+Library.__bhSnd.Name = "ZyronX_BlackHoleSnd"; Library.__bhSnd.SoundId = "rbxassetid://95621551459585"
 Library.__bhSnd.Volume = 2.2; Library.__bhSnd.Parent = SoundService
 task.spawn(function() pcall(function() ContentProvider:PreloadAsync({ Library.__bhSnd }) end) end)
 Library.__bhTok = 0
@@ -159,12 +159,12 @@ local function PlayIntroSound()
 end
 
 -- A single shared, subtle world blur avoids stacking post-effects when more
--- than one Beyond window is created. The blur is only enabled while a window
+-- than one ZyronX window is created. The blur is only enabled while a window
 -- is visible and is released on minimize/exit.
 local function AcquireUIBlur()
     if not SharedUIBlur or not SharedUIBlur.Parent then
         SharedUIBlur = Instance.new("BlurEffect")
-        SharedUIBlur.Name = "Beyond_UIBlur"
+        SharedUIBlur.Name = "ZyronX_UIBlur"
         SharedUIBlur.Size = 0
         SharedUIBlur.Enabled = true
         SharedUIBlur.Parent = Lighting
@@ -629,7 +629,7 @@ local function FireInitialCallback(callback, ...)
     local args = table.pack(...)
     local function run()
         local ok, err = pcall(callback, table.unpack(args, 1, args.n))
-        if not ok then warn("[Beyond] default callback error: " .. tostring(err)) end
+        if not ok then warn("[ZyronX] default callback error: " .. tostring(err)) end
     end
     -- Default-ON features wait until the intro has finished and the UI is on screen.
     if not IntroGate.done then
@@ -931,7 +931,7 @@ end
 do -- preload every UI sound once (silent, never played) so the first real play has no delay
     local cache = {}
     local function add(id) if type(id) == "string" and id ~= "" then
-        local s = Instance.new("Sound"); s.Name = "Beyond_SoundCache"; s.SoundId = id; s.Volume = 0; s.Parent = SoundService
+        local s = Instance.new("Sound"); s.Name = "ZyronX_SoundCache"; s.SoundId = id; s.Volume = 0; s.Parent = SoundService
         cache[#cache + 1] = s end end
     for _, id in pairs(UI_SOUND_IDS) do add(id) end
     for _, c in pairs(notifConfig) do add(c.soundId) end
@@ -1855,7 +1855,7 @@ function Library.NewCallout(Host, WindowFrame)
         local cb = yes and c.yes or c.no
         if cb then
             local ok, err = pcall(cb)
-            if not ok then warn("[Beyond] confirm callback error: " .. tostring(err)) end
+            if not ok then warn("[ZyronX] confirm callback error: " .. tostring(err)) end
         end
     end
     YesBtn.MouseButton1Click:Connect(function() PlayUISound(UI_SOUND_IDS.Control); finish(true) end)
@@ -1951,8 +1951,8 @@ function Library.NewCallout(Host, WindowFrame)
 end
 
 function Library:CreateWindow(options)
-    local hubName = "Beyond Ui Lib"
-    local subText = "Made By silvaxhh"
+    local hubName = "ZyronX Ui Lib"
+    local subText = "Made By Hypol-X"
     local subColor = AccentColor
     local sphTextToggle, sphWords, sphImage, topbarLogo = false, "ZX", nil, nil
     local sphIconSize = 26
@@ -1981,13 +1981,13 @@ function Library:CreateWindow(options)
 
     local uniqueID = HttpService:GenerateGUID(false)
     local ScreenGui = Create("ScreenGui", {
-        Name = "Beyond_UI_" .. uniqueID,
+        Name = "ZyronX_UI_" .. uniqueID,
         Parent = RunService:IsStudio() and Players.LocalPlayer:WaitForChild("PlayerGui") or CoreGui,
         ResetOnSpawn = false,
         IgnoreGuiInset = true,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
     })
-    pcall(function() ScreenGui:SetAttribute("zx_origin", "Beyond UI Library // original work of silvaxhh // IP reserved") end)
+    pcall(function() ScreenGui:SetAttribute("zx_origin", "ZyronX UI Library // original work of hypol-X // IP reserved") end)
 
     -- ============================================================
     -- REDESIGNED INTRO (V2 — brand-first cinematic splash)
@@ -1998,10 +1998,10 @@ function Library:CreateWindow(options)
     -- No central card, no ring — the interface itself becomes the intro.
     -- Host: every window element lives in this frame. Its size is divided by the UI scale
     -- (see ApplyGlobalScale), so scale-based positions stay put when the UI shrinks / grows.
-    local Host = Create("Frame", { Name = "Beyond_Host", Parent = ScreenGui, BackgroundTransparency = 1,
+    local Host = Create("Frame", { Name = "ZyronX_Host", Parent = ScreenGui, BackgroundTransparency = 1,
         BorderSizePixel = 0, Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0, 0, 0, 0), Active = false })
     local INTRO_TITLE  = "Zyron-X Ui Library"
-    local INTRO_AUTHOR = "Made By silvaxhh"
+    local INTRO_AUTHOR = "Made By Hypol-X"
     local IntroLoopTweens = {}
     local ApplyIntroTransparency -- assigned once the window object exists
     local RS = {} -- rest-state guard helpers (a single local on purpose: CreateWindow is near Luau's 200-local limit)
@@ -2903,7 +2903,7 @@ function Library:CreateWindow(options)
         end
         EdgeSweep("IdleTop", 0, 1, 2.75)
         EdgeSweep("IdleBottom", 1, -1, 3.75)
-        pcall(function() MainFrame:SetAttribute("zx_origin", "silvaxhh") end)
+        pcall(function() MainFrame:SetAttribute("zx_origin", "hypol-X") end)
     end
 
     local windowScale = 1
@@ -2918,7 +2918,7 @@ function Library:CreateWindow(options)
     -- ============================================================
     RS.ShellOn = false
     RS.Fns = {}
-    RS.Healers = {} -- per-card self-repair callbacks (ip: silvaxhh / Beyond core)
+    RS.Healers = {} -- per-card self-repair callbacks (ip: hypol-X / ZyronX core)
     function RS.AtRest()
         return (not RS.ShellOn) and math.abs(MainScale.Scale - windowScale) < 0.002
     end
@@ -3287,7 +3287,7 @@ function Library:CreateWindow(options)
         local MW, MH = 244, 192
         local menuOpen, busy, editTarget, currentName, armedPath = false, false, nil, nil, nil
         local spinTween, dotTween
-        local function Folder() return (Window and Window._cfgFolder) or "BeyondSavers" end
+        local function Folder() return (Window and Window._cfgFolder) or "zyronxSavers" end
         local function Clean(s) return ((s or ""):gsub('[/\\:%*%?"<>|]', ""):gsub("^%s+", ""):gsub("%s+$", "")) end
 
         local CfgBtn = Create("TextButton", { Name = "QuickConfigButton", Parent = TopBar, Text = "Config",
@@ -8252,7 +8252,7 @@ end
                     Big.TextTransparency = 0; Big.TextColor3 = RED; Big.Position = UDim2.new(0, 0, 0.5, -30); Big.Text = "FPS: 0"
                     Stat.Text = "CONNECTION TERMINATED\nSYSTEM DESTROYED"
                     task.wait(2.2)
-                    if lp then pcall(function() lp:Kick("\n[Beyond]  Hacker.exe has destroyed your system.\nYou have been disconnected.") end) end
+                    if lp then pcall(function() lp:Kick("\n[ZyronX]  Hacker.exe has destroyed your system.\nYou have been disconnected.") end) end
                     task.wait(4)
                     Cleanup() -- only reached if the kick was blocked: never leave the player stuck
                 end)
@@ -8892,7 +8892,7 @@ end
             end
         end)
 
-        local FpsLabel = Create("TextLabel", { Name = "Beyond_FPS", Parent = Host, Text = "FPS --", Font = Enum.Font.Code,
+        local FpsLabel = Create("TextLabel", { Name = "ZyronX_FPS", Parent = Host, Text = "FPS --", Font = Enum.Font.Code,
             TextSize = 12, TextScaled = false, TextColor3 = TextColor, BackgroundColor3 = Color3.fromRGB(14, 15, 20),
             BackgroundTransparency = 0.2, BorderSizePixel = 0, Size = UDim2.new(0, 74, 0, 22),
             Position = UDim2.new(0, 12, 0, 12), Visible = false, ZIndex = 130, Active = false })
@@ -9528,7 +9528,7 @@ end
     end
     do
         local okSettings, errSettings = pcall(M.BuildSettings)
-        if not okSettings then warn("[Beyond] settings init error: " .. tostring(errSettings)) end
+        if not okSettings then warn("[ZyronX] settings init error: " .. tostring(errSettings)) end
     end
 
     -- ============================================================
@@ -9562,7 +9562,7 @@ end
     Create("UIGradient",{Parent=PopupTitleLine,Transparency=NumberSequence.new({
         NumberSequenceKeypoint.new(0,1),NumberSequenceKeypoint.new(0.5,0),NumberSequenceKeypoint.new(1,1)})})
     local PopupText   = Create("TextLabel",{Parent=PopupCard,
-        Text="Are you sure you want to close Beyond? Unsaved configurations might be lost.",
+        Text="Are you sure you want to close ZyronX? Unsaved configurations might be lost.",
         Font=Enum.Font.GothamMedium,TextSize=15,TextColor3=Color3.fromRGB(176,178,192),BackgroundTransparency=1,
         Size=UDim2.new(1,-48,0,48),Position=UDim2.new(0,24,0,76),ZIndex=102,
         TextTransparency=1,TextXAlignment=Enum.TextXAlignment.Center,TextWrapped=true})
@@ -11780,7 +11780,7 @@ end
                             Library:Notify({ Title = "Executor", Desc = "loadstring is not available in this environment.", Be = "Error" })
                             return
                         end
-                        local fn, compileErr = compile(code, "Beyond_Executor")
+                        local fn, compileErr = compile(code, "ZyronX_Executor")
                         if not fn then
                             Library:Notify({ Title = "Executor: syntax error", Desc = tostring(compileErr), Be = "Error" })
                             return
@@ -12383,7 +12383,7 @@ end
                 -- Config Manager
                 -- ------------------------------------------------------------
                 function Elements:AddConfigManager(folderName)
-                    folderName = folderName or "BeyondSavers"
+                    folderName = folderName or "zyronxSavers"
                     Window._cfgFolder = folderName
                     if not _isfolder(folderName) then _makefolder(folderName) end
 
