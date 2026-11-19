@@ -1,0 +1,418 @@
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- =========================================
+-- CARREGAMENTO DA LIBRARY COM TEXTO ALTERADO
+-- =========================================
+local url = "https://raw.githubusercontent.com/joaopedropdz596-oss/Beyond-UI-Library/refs/heads/main/Beyond.lua"
+local rawScript = game:HttpGet(url)
+
+-- Altera os textos de carregamento
+rawScript = rawScript:gsub("Zyron%-X Ui Library", "Beyond")
+rawScript = rawScript:gsub("Made By Hypol%-X", "Made By silvaxhh")
+
+local Library = loadstring(rawScript)()
+
+-- WINDOW
+local Window = Library:CreateWindow({
+    Title = "Beyond",
+    Subtitle = "Beyond the Limits",
+    SubtitleColor = Color3.fromRGB(190, 140, 255),
+    UITheme = "Default",
+    PanelTheme = "Default",
+    PanelSync = true,
+    FpsPosition = "TopLeft",
+})
+
+-- =========================================
+-- VARIÁVEIS GLOBAIS
+-- =========================================
+local AimbotSettings = {
+    Enabled = false,
+    TargetPart = "Head",
+    MaxDistance = 1000,
+    VisibleCheck = false,
+    KillCheck = false,
+    TeamCheck = false
+}
+
+local FOVSettings = {
+    Enabled = false,
+    DrawCircle = false,
+    Radius = 100,
+    Sides = 25
+}
+
+local ESP_State = { Enabled = false, Names = false, Distance = false, HealthBars = false, Chams = false }
+local ESP_Objects = {}
+
+local OriginalLighting = {
+    Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient,
+    Brightness = Lighting.Brightness, GlobalShadows = Lighting.GlobalShadows,
+    FogEnd = Lighting.FogEnd, ShadowSoftness = Lighting.ShadowSoftness
+}
+
+-- =========================================
+-- LÓGICA DO FOV (DESENHO NA TELA)
+-- =========================================
+local fovCircle = Drawing.new("Circle")
+fovCircle.Visible = false
+fovCircle.Color = Color3.fromRGB(255, 255, 255)
+fovCircle.Thickness = 1.5
+fovCircle.NumSides = FOVSettings.Sides
+fovCircle.Radius = FOVSettings.Radius
+fovCircle.Filled = false
+
+RunService.RenderStepped:Connect(function()
+    if FOVSettings.Enabled and FOVSettings.DrawCircle then
+        fovCircle.Position = Vector2.new(Workspace.CurrentCamera.ViewportSize.X / 2, Workspace.CurrentCamera.ViewportSize.Y / 2)
+        fovCircle.Radius = FOVSettings.Radius
+        fovCircle.NumSides = FOVSettings.Sides
+        fovCircle.Visible = true
+    else
+        fovCircle.Visible = false
+    end
+end)
+
+-- =========================================
+-- LÓGICA DO AIMBOT (SEMPRE ATIVO / ALWAYS)
+-- =========================================
+RunService.RenderStepped:Connect(function()
+    if not AimbotSettings.Enabled then return end
+    
+    local localPlayer = Players.LocalPlayer
+    local camera = Workspace.CurrentCamera
+    if not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+
+    local closestPlayer = nil
+    local shortestDistance = FOVSettings.Radius
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if AimbotSettings.KillCheck and (not humanoid or humanoid.Health <= 0) then continue end
+            if AimbotSettings.TeamCheck and player.Team == localPlayer.Team then continue end
+
+            local targetPart = nil
+            if AimbotSettings.TargetPart == "Head" then
+                targetPart = player.Character:FindFirstChild("Head")
+            elseif AimbotSettings.TargetPart == "Torso" then
+                targetPart = player.Character:FindFirstChild("UpperTorso") or player.Character:FindFirstChild("Torso")
+            end
+
+            if targetPart then
+                local screenPoint, onScreen = camera:WorldToViewportPoint(targetPart.Position)
+                if onScreen then
+                    local mousePos = UserInputService:GetMouseLocation()
+                    local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
+                    
+                    if distance < shortestDistance and distance < AimbotSettings.MaxDistance then
+                        local canSee = true
+                        if AimbotSettings.VisibleCheck then
+                            local rayParams = RaycastParams.new()
+                            rayParams.FilterDescendantsInstances = {localPlayer.Character, camera}
+                            rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                            local result = Workspace:Raycast(camera.CFrame.Position, (targetPart.Position - camera.CFrame.Position), rayParams)
+                            if result and not result.Instance:IsDescendantOf(player.Character) then
+                                canSee = false
+                            end
+                        end
+
+                        if canSee then
+                            closestPlayer = targetPart
+                            shortestDistance = distance
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if closestPlayer then
+        camera.CFrame = CFrame.new(camera.CFrame.Position, closestPlayer.Position)
+    end
+end)
+
+-- =========================================
+-- HOME
+-- =========================================
+local HomeTab = Window:CreateTab("Home", true, false)
+local HomePage = HomeTab:CreatePage("Overview")
+local Welcome = HomePage:CreateSection("Welcome")
+Welcome:AddButton("Welcome to Beyond", function() Library:Notify({ Title = "Beyond", Desc = "Welcome!", Be = "Info" }) end)
+Welcome:AddIndicator("Players", false, function() return #Players:GetPlayers() end)
+
+-- =========================================
+-- MAIN (AIMBOT E FOV)
+-- =========================================
+local MainTab = Window:CreateTab("Main", false, false)
+local AimbotPage = MainTab:CreatePage("Aimbot Settings")
+
+local AimbotTitle = AimbotPage:CreateSection("Aimbot")
+AimbotTitle:AddToggle("AimbotEnabled", false, function(on) AimbotSettings.Enabled = on end, { Title = "Enabled" })
+
+AimbotTitle:AddDropdown("TargetPart", {"Head", "Torso"}, false, function(v) AimbotSettings.TargetPart = v end, { Title = "Target Parts", DefaultOptions = {"Head"} })
+
+AimbotTitle:AddToggle("KillCheck", false, function(on) AimbotSettings.KillCheck = on end, { Title = "Kill Check" })
+AimbotTitle:AddToggle("TeamCheck", false, function(on) AimbotSettings.TeamCheck = on end, { Title = "Team Check" })
+
+local AimbotSettingsSec = AimbotPage:CreateSection("Aimbot Settings")
+AimbotSettingsSec:AddToggle("VisibleCheck", false, function(on) AimbotSettings.VisibleCheck = on end, { Title = "Visible Check" })
+AimbotSettingsSec:AddSlider("MaxDistance", 0, 1000, 1000, function(v) AimbotSettings.MaxDistance = v end, { Title = "Max Distance" })
+
+local FOVPage = MainTab:CreatePage("Field Of View")
+local FOVSection = FOVPage:CreateSection("Field of View")
+FOVSection:AddToggle("FOVEnabled", false, function(on) FOVSettings.Enabled = on end, { Title = "Enabled" })
+FOVSection:AddToggle("DrawCircle", false, function(on) FOVSettings.DrawCircle = on end, { Title = "Draw Circle" })
+
+local FOVSettingsSec = FOVPage:CreateSection("Field Of View Settings")
+FOVSettingsSec:AddSlider("FOVRadius", 10, 500, 100, function(v) FOVSettings.Radius = v end, { Title = "Radius" })
+FOVSettingsSec:AddSlider("FOVSides", 3, 100, 25, function(v) FOVSettings.Sides = v end, { Title = "Sides" })
+
+-- =========================================
+-- VISUALS (Mantido e corrigido)
+-- =========================================
+local VisualTab = Window:CreateTab("Visuals", false, false)
+local PlayerVisualsPage = VisualTab:CreatePage("Player Visuals")
+local PlayerVisualSettingsPage = VisualTab:CreatePage("Player Visual Settings")
+
+local function UpdateAllESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player == Players.LocalPlayer then continue end
+        local char = player.Character
+        if not char then continue end
+        local head = char:FindFirstChild("Head")
+        local humanoid = char:FindFirstChild("Humanoid")
+        if not head or not humanoid then continue end
+        
+        if humanoid.Health <= 0 then
+            if ESP_Objects[player] then 
+                for _, v in pairs(ESP_Objects[player]) do v:Destroy() end 
+                ESP_Objects[player] = nil
+            end
+            continue 
+        end
+
+        if ESP_Objects[player] then for _, v in pairs(ESP_Objects[player]) do v:Destroy() end end
+        ESP_Objects[player] = {}
+        
+        if ESP_State.Enabled and ESP_State.Chams then
+            local hl = Instance.new("Highlight")
+            hl.Parent = char
+            hl.FillColor = Color3.fromRGB(190, 140, 255)
+            hl.FillTransparency = 0.5
+            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+            hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            table.insert(ESP_Objects[player], hl)
+        end
+        
+        if ESP_State.Enabled and ESP_State.Names then
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "NameESP"
+            billboard.Adornee = head
+            billboard.Size = UDim2.new(0, 200, 0, 50)
+            billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Parent = head
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Parent = billboard
+            textLabel.Size = UDim2.new(1, 0, 1, 0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.Text = player.Name
+            textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            textLabel.TextStrokeTransparency = 0
+            textLabel.TextSize = 14
+            table.insert(ESP_Objects[player], billboard)
+        end
+
+        if ESP_State.Enabled and ESP_State.Distance then
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "DistESP"
+            billboard.Adornee = head
+            billboard.Size = UDim2.new(0, 200, 0, 50)
+            billboard.StudsOffset = Vector3.new(0, 2.0, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Parent = head
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Parent = billboard
+            textLabel.Size = UDim2.new(1, 0, 1, 0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            textLabel.TextStrokeTransparency = 0
+            textLabel.TextSize = 12
+            local connection
+            connection = RunService.RenderStepped:Connect(function()
+                if char.Parent and humanoid.Health > 0 and char:FindFirstChild("HumanoidRootPart") and Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = (Players.LocalPlayer.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude
+                    textLabel.Text = tostring(math.floor(dist)) .. " studs"
+                else
+                    connection:Disconnect()
+                end
+            end)
+            table.insert(ESP_Objects[player], billboard)
+            table.insert(ESP_Objects[player], {Destroy = function() if connection then connection:Disconnect() end end})
+        end
+        
+        if ESP_State.Enabled and ESP_State.HealthBars then
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "HealthESP"
+            billboard.Adornee = head
+            billboard.Size = UDim2.new(0, 50, 0, 5)
+            billboard.StudsOffset = Vector3.new(1.5, 1.5, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Parent = head
+            local frame = Instance.new("Frame")
+            frame.Parent = billboard
+            frame.Size = UDim2.new(1, 0, 1, 0)
+            frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            frame.BorderSizePixel = 0
+            local fill = Instance.new("Frame")
+            fill.Parent = frame
+            fill.Size = UDim2.new(1, 0, 1, 0)
+            fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            fill.BorderSizePixel = 0
+            local connection
+            connection = RunService.RenderStepped:Connect(function()
+                if humanoid then
+                    local healthPct = humanoid.Health / humanoid.MaxHealth
+                    fill.Size = UDim2.new(healthPct, 0, 1, 0)
+                    fill.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPct), 255 * healthPct, 0)
+                else
+                    connection:Disconnect()
+                end
+            end)
+            table.insert(ESP_Objects[player], billboard)
+            table.insert(ESP_Objects[player], {Destroy = function() if connection then connection:Disconnect() end end})
+        end
+    end
+end
+
+task.spawn(function()
+    while task.wait(1) do
+        if ESP_State.Enabled then
+            UpdateAllESP()
+        end
+    end
+end)
+
+Players.PlayerAdded:Connect(function(player) 
+    player.CharacterAdded:Connect(function() 
+        task.wait(1)
+        if ESP_State.Enabled then UpdateAllESP() end
+    end) 
+end)
+
+local PVSection = PlayerVisualsPage:CreateSection("Player Visuals")
+PVSection:AddToggle("PV_Enabled", false, function(on) ESP_State.Enabled = on; UpdateAllESP() end, { Title = "Enabled (Master)" })
+PVSection:AddToggle("Names", false, function(on) ESP_State.Names = on; UpdateAllESP() end, { Title = "Names" })
+PVSection:AddToggle("HealthBars", false, function(on) ESP_State.HealthBars = on; UpdateAllESP() end, { Title = "Health Bars" })
+PVSection:AddToggle("Distance", false, function(on) ESP_State.Distance = on; UpdateAllESP() end, { Title = "Distance" })
+PVSection:AddToggle("Chams", false, function(on) ESP_State.Chams = on; UpdateAllESP() end, { Title = "Chams" })
+
+local PVSettingsSection = PlayerVisualSettingsPage:CreateSection("Player Visual Settings")
+PVSettingsSection:AddToggle("AnimatedBoxes", false, function(on) end, { Title = "Animated Boxes" })
+PVSettingsSection:AddToggle("DynamicHealthText", true, function(on) end, { Title = "Dynamic Health Text" })
+PVSettingsSection:AddToggle("GradientHealthBar", true, function(on) end, { Title = "Gradient Health Bar" })
+PVSettingsSection:AddToggle("ThermalChams", false, function(on) end, { Title = "Thermal Chams" })
+PVSettingsSection:AddDropdown("TextFont", {"Plex", "Arial", "Roboto", "System"}, false, function(v) end, { Title = "Text Font", DefaultOptions = {"Plex"} })
+PVSettingsSection:AddSlider("TextSize", 0, 30, 12, function(v) end, { Title = "Text Size" })
+PVSettingsSection:AddSlider("MaxRenderDistance", 0, 2000, 1000, function(v) end, { Title = "Max Render Distance" })
+
+-- =========================================
+-- MISC
+-- =========================================
+local MiscTab = Window:CreateTab("Misc", false, false)
+local MiscPage = MiscTab:CreatePage("Utilities")
+
+local OptimizationSection = MiscPage:CreateSection("Otimização")
+OptimizationSection:AddToggle("Optimization", false, function(on)
+    if on then
+        OriginalLighting.Ambient = Lighting.Ambient
+        OriginalLighting.OutdoorAmbient = Lighting.OutdoorAmbient
+        OriginalLighting.Brightness = Lighting.Brightness
+        OriginalLighting.GlobalShadows = Lighting.GlobalShadows
+        OriginalLighting.FogEnd = Lighting.FogEnd
+        OriginalLighting.ShadowSoftness = Lighting.ShadowSoftness
+        
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.Brightness = 2
+        Lighting.Ambient = Color3.fromRGB(178, 178, 178)
+        Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
+        Lighting.ShadowSoftness = 0
+        
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("BasePart") and v.Material ~= Enum.Material.SmoothPlastic then
+                v.Material = Enum.Material.SmoothPlastic
+            end
+        end
+        Library:Notify({ Title = "Otimização", Desc = "Texturas e sombras removidas!", Be = "Success" })
+    else
+        Lighting.Ambient = OriginalLighting.Ambient
+        Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+        Lighting.Brightness = OriginalLighting.Brightness
+        Lighting.GlobalShadows = OriginalLighting.GlobalShadows
+        Lighting.FogEnd = OriginalLighting.FogEnd
+        Lighting.ShadowSoftness = OriginalLighting.ShadowSoftness
+        Library:Notify({ Title = "Otimização", Desc = "Gráficos restaurados ao padrão.", Be = "Info" })
+    end
+end, { Title = "Otimização", Description = "Remove texturas e sombras." })
+
+-- =========================================
+-- TELA ESTICADA (DE VOLTA NA MISC COM TOGGLE)
+-- =========================================
+local StretchSection = MiscPage:CreateSection("Tela Esticada")
+
+-- Variável para controlar se a tela esticada está ativa
+local isStretched = false
+local stretchConnection = nil
+local Camera = workspace.CurrentCamera
+
+getgenv().Resolution = {
+    [".gg/scripters"] = 0.65
+}
+
+-- Função que ativa/desativa o efeito
+local function ToggleStretch(enable)
+    isStretched = enable
+    
+    if enable then
+        -- Se ligar, começa a aplicar o efeito
+        stretchConnection = RunService.RenderStepped:Connect(function()
+            Camera.CFrame = Camera.CFrame * CFrame.new(0, 0, 0, 1, 0, 0, 0, getgenv().Resolution[".gg/scripters"], 0, 0, 0, 1)
+        end)
+    else
+        -- Se desligar, para o efeito e reseta a câmera
+        if stretchConnection then
+            stretchConnection:Disconnect()
+            stretchConnection = nil
+            Camera.CFrame = Camera.CFrame * CFrame.new(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1) -- Reseta a escala Y
+        end
+    end
+end
+
+-- Adiciona o Toggle na aba Misc
+StretchSection:AddToggle("EnableStretch", false, function(on)
+    ToggleStretch(on)
+end, { Title = "Ativar Tela Esticada", Description = "Deixa os modelos mais largos." })
+
+StretchSection:AddSlider("StretchAmount", 0, 100, 35, function(value)
+    -- O slider vai de 0 a 100, mas o multiplicador precisa ser entre 0.65 e 1.0
+    -- Valor 0 = 1.0 (Normal) | Valor 100 = 0.65 (Máximo esticado)
+    local factor = 1.0 - ((value / 100) * 0.35)
+    getgenv().Resolution[".gg/scripters"] = factor
+end, { Title = "Nível da Tela Esticada", Description = "Ajusta o quão esticado está." })
+
+-- =========================================
+-- SETTINGS
+-- =========================================
+local SettingsTab = Window:CreateTab("Settings", false, false)
+local SettingsPage = SettingsTab:CreatePage("Configuration")
+local Config = SettingsPage:CreateSection("Config")
+Config:AddConfigManager("BeyondConfigs")
+
+print("Beyond loaded successfully!")
